@@ -138,6 +138,26 @@ func main() {
 				fmt.Printf("plaintext: %s\n", plaintext)
 			}
 		case 4:
+			kkey, err := ioutil.ReadFile("cypher")
+			if err != nil {
+				log.Fatal(err)
+			}
+			for i := 0; i < len(allData); i++ {
+				currentData := []byte(allData[i])
+				chipheredData, _ := Encrypt(kkey, currentData)
+				//err = ioutil.WriteFile(wad, chipheredData, 0644)
+				f, err := os.OpenFile(wad, os.O_APPEND|os.O_WRONLY, 0600)
+				if err != nil {
+					panic(err)
+				}
+				defer f.Close()
+				if _, err = f.Write(chipheredData); err != nil {
+					panic(err)
+				}
+				if _, err = f.WriteString("\n"); err != nil {
+					panic(err)
+				}
+			}
 			break
 		}
 	}
@@ -153,7 +173,7 @@ func main() {
 	// Схемка для хранения:
 
 	// цикл запроса ввода от пользователя вида:
-	// 1. Вывод ЮЗЕРОВ для выбора вывода их пароля
+	// 1. Вывод ЮЗЕРОВ для выбора вывода их пароля +
 	// 2. изменение списка
 	// 3. выход (и последующая запись с шифрованием)
 
