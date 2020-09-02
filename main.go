@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -79,10 +80,26 @@ func main() {
 
 	// Инициализация среза для хранения данных в памяти
 
-	//var allData []string
 	allData := make([]string, 1)
-	allData[0] = "user:password"
-	fmt.Println(allData)
+
+	kkey, err := ioutil.ReadFile("cypher")
+	if err != nil {
+		log.Fatal(err)
+	}
+	scanner := bufio.NewScanner(dataFile)
+	for scanner.Scan() {
+		crap := []byte(scanner.Text())
+		// --- Туть ошибка слайса slice bounds out of range [:12] with capacity 8
+		realData, _ := Decrypt(kkey, crap)
+		strrealData := string(realData)
+		if strrealData != "" {
+			allData = append(allData, strrealData)
+		}
+		//fmt.Println(allData)
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
 
 	var i int
 	for i != 4 {
@@ -138,6 +155,7 @@ func main() {
 				fmt.Printf("plaintext: %s\n", plaintext)
 			}
 		case 4:
+			err = ioutil.WriteFile(wad, []byte(""), 0644)
 			kkey, err := ioutil.ReadFile("cypher")
 			if err != nil {
 				log.Fatal(err)
@@ -145,7 +163,6 @@ func main() {
 			for i := 0; i < len(allData); i++ {
 				currentData := []byte(allData[i])
 				chipheredData, _ := Encrypt(kkey, currentData)
-				//err = ioutil.WriteFile(wad, chipheredData, 0644)
 				f, err := os.OpenFile(wad, os.O_APPEND|os.O_WRONLY, 0600)
 				if err != nil {
 					panic(err)
@@ -161,7 +178,6 @@ func main() {
 			break
 		}
 	}
-	// здесь ФУНКЦИЯ для ввода данных в память
 
 	// key, err := GenerateKey()
 	// Write key to cypher file
@@ -175,6 +191,7 @@ func main() {
 	// цикл запроса ввода от пользователя вида:
 	// 1. Вывод ЮЗЕРОВ для выбора вывода их пароля +
 	// 2. изменение списка
-	// 3. выход (и последующая запись с шифрованием)
+	// 3. выход (и последующая запись с шифрованием) +
+	// 4. почему то пишет вначало списка пустоту
 
 }
