@@ -10,6 +10,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
+
+	"github.com/recoilme/slowpoke"
 )
 
 //Encrypt - шифрование
@@ -63,6 +66,9 @@ func main() {
 	//File openings
 	cypher := "cypher"
 	wad := "data"
+	dbfile := "db/main.db"
+
+	defer slowpoke.CloseAll()
 
 	cypherFile, err := os.OpenFile(cypher, os.O_RDWR, 0644)
 	if err != nil {
@@ -112,7 +118,27 @@ func main() {
 		fmt.Scan(&i)
 		switch i {
 		case 1:
-			fmt.Println(allData)
+			//fmt.Println(allData)
+			// plaintext, err := Decrypt(kkey, ciphertext)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+			// fmt.Printf("plaintext: %s\n", plaintext)
+			for i := 0; i < 10; i++ {
+				nummero := strconv.Itoa(i)
+				dbkey := []byte(nummero)
+				//get from database
+				res, _ := slowpoke.Get(dbfile, dbkey)
+				//result
+				if string(res) != "" {
+					decdat, _ := Decrypt(kkey, res)
+					ressult := string(decdat)
+					fmt.Println(ressult)
+					allData = append(allData, ressult)
+				}
+
+			}
+
 		case 2:
 			{
 				var name string
@@ -155,25 +181,34 @@ func main() {
 				fmt.Printf("plaintext: %s\n", plaintext)
 			}
 		case 4:
+			//var _ = os.Remove(dbfile)
 			err = ioutil.WriteFile(wad, []byte(""), 0644)
-			kkey, err := ioutil.ReadFile("cypher")
+			//kkey, err := ioutil.ReadFile("cypher")
 			if err != nil {
 				log.Fatal(err)
 			}
-			for i := 0; i < len(allData); i++ {
+
+			for i := 1; i < len(allData); i++ {
+				//Database store
+				fmt.Println("im writing")
+				keyvalue := strconv.Itoa(i)
 				currentData := []byte(allData[i])
 				chipheredData, _ := Encrypt(kkey, currentData)
-				f, err := os.OpenFile(wad, os.O_APPEND|os.O_WRONLY, 0600)
-				if err != nil {
-					panic(err)
-				}
-				defer f.Close()
-				if _, err = f.Write(chipheredData); err != nil {
-					panic(err)
-				}
-				if _, err = f.WriteString("\n"); err != nil {
-					panic(err)
-				}
+				slowpoke.Set(dbfile, []byte(keyvalue), chipheredData)
+				//
+				// currentData := []byte(allData[i])
+				// chipheredData, _ := Encrypt(kkey, currentData)
+				// f, err := os.OpenFile(wad, os.O_APPEND|os.O_WRONLY, 0600)
+				// if err != nil {
+				// 	panic(err)
+				// }
+				// defer f.Close()
+				// if _, err = f.Write(chipheredData); err != nil {
+				// 	panic(err)
+				// }
+				// if _, err = f.WriteString("\n"); err != nil {
+				// 	panic(err)
+				// }
 			}
 			break
 		}
@@ -185,13 +220,4 @@ func main() {
 	// if err != nil {
 	//     return
 	// }
-
-	// Схемка для хранения:
-
-	// цикл запроса ввода от пользователя вида:
-	// 1. Вывод ЮЗЕРОВ для выбора вывода их пароля +
-	// 2. изменение списка
-	// 3. выход (и последующая запись с шифрованием) +
-	// 4. почему то пишет вначало списка пустоту
-
 }
