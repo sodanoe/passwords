@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -65,7 +64,6 @@ func main() {
 
 	//File openings
 	cypher := "cypher"
-	wad := "data"
 	dbfile := "db/main.db"
 
 	defer slowpoke.CloseAll()
@@ -76,35 +74,29 @@ func main() {
 	}
 	defer cypherFile.Close()
 
-	dataFile, err := os.OpenFile(wad, os.O_RDWR, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer dataFile.Close()
-
 	data := []byte("our super secret text")
 
 	// Инициализация среза для хранения данных в памяти
 
-	allData := make([]string, 1)
+	allData := make([]string, 0)
 
 	kkey, err := ioutil.ReadFile("cypher")
 	if err != nil {
 		log.Fatal(err)
 	}
-	scanner := bufio.NewScanner(dataFile)
-	for scanner.Scan() {
-		crap := []byte(scanner.Text())
-		// --- Туть ошибка слайса slice bounds out of range [:12] with capacity 8
-		realData, _ := Decrypt(kkey, crap)
-		strrealData := string(realData)
-		if strrealData != "" {
-			allData = append(allData, strrealData)
+
+	for i := 0; i < 10; i++ {
+		nummero := strconv.Itoa(i)
+		dbkey := []byte(nummero)
+		//get from database
+		res, _ := slowpoke.Get(dbfile, dbkey)
+		//result
+		if string(res) != "" {
+			decdat, _ := Decrypt(kkey, res)
+			ressult := string(decdat)
+			allData = append(allData, ressult)
+			fmt.Println(ressult)
 		}
-		//fmt.Println(allData)
-	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
 	}
 
 	var i int
@@ -118,12 +110,6 @@ func main() {
 		fmt.Scan(&i)
 		switch i {
 		case 1:
-			//fmt.Println(allData)
-			// plaintext, err := Decrypt(kkey, ciphertext)
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
-			// fmt.Printf("plaintext: %s\n", plaintext)
 			for i := 0; i < 10; i++ {
 				nummero := strconv.Itoa(i)
 				dbkey := []byte(nummero)
@@ -133,12 +119,10 @@ func main() {
 				if string(res) != "" {
 					decdat, _ := Decrypt(kkey, res)
 					ressult := string(decdat)
+					fmt.Print(dbkey, " is ")
 					fmt.Println(ressult)
-					allData = append(allData, ressult)
 				}
-
 			}
-
 		case 2:
 			{
 				var name string
@@ -156,7 +140,6 @@ func main() {
 					result := name + ":" + password
 					allData = append(allData, result)
 				}
-
 				fmt.Println(allData)
 			}
 		case 3:
@@ -165,7 +148,6 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -181,39 +163,24 @@ func main() {
 				fmt.Printf("plaintext: %s\n", plaintext)
 			}
 		case 4:
-			//var _ = os.Remove(dbfile)
-			err = ioutil.WriteFile(wad, []byte(""), 0644)
-			//kkey, err := ioutil.ReadFile("cypher")
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			for i := 1; i < len(allData); i++ {
+			for i := 0; i < len(allData); i++ {
 				//Database store
 				fmt.Println("im writing")
 				keyvalue := strconv.Itoa(i)
 				currentData := []byte(allData[i])
 				chipheredData, _ := Encrypt(kkey, currentData)
-				slowpoke.Set(dbfile, []byte(keyvalue), chipheredData)
-				//
-				// currentData := []byte(allData[i])
-				// chipheredData, _ := Encrypt(kkey, currentData)
-				// f, err := os.OpenFile(wad, os.O_APPEND|os.O_WRONLY, 0600)
-				// if err != nil {
-				// 	panic(err)
-				// }
-				// defer f.Close()
-				// if _, err = f.Write(chipheredData); err != nil {
-				// 	panic(err)
-				// }
-				// if _, err = f.WriteString("\n"); err != nil {
-				// 	panic(err)
-				// }
+				fmt.Println("|", allData[i], "|")
+				if len(allData[i]) > 0 {
+					slowpoke.Set(dbfile, []byte(keyvalue), chipheredData)
+					fmt.Println("||", allData[i], "||")
+				}
 			}
 			break
 		}
 	}
-
 	// key, err := GenerateKey()
 	// Write key to cypher file
 	// err = ioutil.WriteFile(cypher, key, 0644)
