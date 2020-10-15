@@ -88,16 +88,15 @@ func main() {
 	for i := 0; i < 10; i++ {
 		nummero := strconv.Itoa(i)
 		dbkey := []byte(nummero)
-		//get from database
 		res, _ := slowpoke.Get(dbfile, dbkey)
-		//result
 		if string(res) != "" {
 			decdat, _ := Decrypt(kkey, res)
 			ressult := string(decdat)
 			allData = append(allData, ressult)
-			fmt.Println(ressult)
 		}
 	}
+
+	fmt.Println(allData)
 
 	var i int
 	for i != 4 {
@@ -119,7 +118,7 @@ func main() {
 				if string(res) != "" {
 					decdat, _ := Decrypt(kkey, res)
 					ressult := string(decdat)
-					fmt.Print(dbkey, " is ")
+					fmt.Print(string(dbkey), " is ")
 					fmt.Println(ressult)
 				}
 			}
@@ -166,17 +165,14 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			for i := 0; i < len(allData); i++ {
+
+			for key, value := range allData {
 				//Database store
-				fmt.Println("im writing")
-				keyvalue := strconv.Itoa(i)
-				currentData := []byte(allData[i])
+				keyvalue := strconv.Itoa(key)
+				currentData := []byte(value)
 				chipheredData, _ := Encrypt(kkey, currentData)
-				fmt.Println("|", allData[i], "|")
-				if len(allData[i]) > 0 {
-					slowpoke.Set(dbfile, []byte(keyvalue), chipheredData)
-					fmt.Println("||", allData[i], "||")
-				}
+				slowpoke.Set(dbfile, []byte(keyvalue), chipheredData) // instead of chipheredData
+				fmt.Println("||", value, "||")
 			}
 			break
 		}
